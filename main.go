@@ -24,6 +24,7 @@ var (
 	flagWork         = flag.Bool("work", false, "print the name of the temporary work directory and do not remove it when exiting")
 	flagX            = flag.Bool("x", false, "print the commands")
 	flagGoBuildFlags = flag.String("gobuildflags", "", "flags to pass to the go compiler")
+	flagGo           = flag.String("go", "go", "go compiler")
 )
 
 func main() {
@@ -47,6 +48,8 @@ func main() {
 	if gobuildflags := *flagGoBuildFlags; gobuildflags != "" {
 		buildFlags = append(buildFlags, gobuildflags)
 	}
+
+	goCompiler := *flagGo
 
 	suppress := []string{
 		"syscall", // https://github.com/google/oss-fuzz/issues/3639
@@ -124,7 +127,7 @@ func main() {
 	args := []string{"build", "-o", out}
 	args = append(args, buildFlags...)
 	args = append(args, mainFile.Name())
-	cmd := exec.Command("go", args...)
+	cmd := exec.Command(goCompiler, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if goarch := os.Getenv("GOARCH"); goarch != "" {
