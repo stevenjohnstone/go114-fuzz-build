@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"go/token"
 	"io/ioutil"
 	"log"
@@ -17,11 +18,12 @@ var (
 	flagFunc = flag.String("func", "Fuzz", "fuzzer entry point")
 	flagO    = flag.String("o", "", "output file")
 
-	flagRace = flag.Bool("race", false, "enable data race detection")
-	flagTags = flag.String("tags", "", "a comma-separated list of build tags to consider satisfied during the build")
-	flagV    = flag.Bool("v", false, "print the names of packages as they are compiled")
-	flagWork = flag.Bool("work", false, "print the name of the temporary work directory and do not remove it when exiting")
-	flagX    = flag.Bool("x", false, "print the commands")
+	flagRace         = flag.Bool("race", false, "enable data race detection")
+	flagTags         = flag.String("tags", "", "a comma-separated list of build tags to consider satisfied during the build")
+	flagV            = flag.Bool("v", false, "print the names of packages as they are compiled")
+	flagWork         = flag.Bool("work", false, "print the name of the temporary work directory and do not remove it when exiting")
+	flagX            = flag.Bool("x", false, "print the commands")
+	flagGoBuildFlags = flag.String("gobuildflags", "", "flags to pass to the go compiler")
 )
 
 func main() {
@@ -41,6 +43,9 @@ func main() {
 		"-gcflags", "all=-d=libfuzzer",
 		"-tags", tags,
 		"-trimpath",
+	}
+	if gobuildflags := *flagGoBuildFlags; gobuildflags != "" {
+		buildFlags = append(buildFlags, gobuildflags)
 	}
 
 	suppress := []string{
@@ -122,6 +127,9 @@ func main() {
 	cmd := exec.Command("go", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	if goarch := os.Getenv("GOARCH"); goarch != "" {
+		cmd.Env = []string{fmt.Sprintf("GOARCH=%s", goarch)}
+	}
 
 	if err := cmd.Run(); err != nil {
 		log.Fatal("failed to build packages:", err)
